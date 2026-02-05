@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using SantanderHnApi.Api.Contracts;
 using SantanderHnApi.Application.Interfaces;
 using SantanderHnApi.Application.Options;
-using SantanderHnApi.Domain.Models;
 
 namespace SantanderHnApi.Api.Controllers;
 
@@ -16,7 +16,7 @@ public sealed class StoriesController(
     private readonly HackerNewsOptions _options = options.Value;
 
     [HttpGet("best")]
-    [ProducesResponseType(typeof(IReadOnlyList<BestStory>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BestStoriesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetBestStories([FromQuery] int n = 10, CancellationToken cancellationToken = default)
     {
@@ -27,6 +27,12 @@ public sealed class StoriesController(
             return BadRequest($"n must be less than or equal to {_options.MaxItems}.");
 
         var stories = await bestStoriesService.GetBestStoriesAsync(n, cancellationToken);
-        return Ok(stories);
+        var response = new BestStoriesResponse
+        {
+            Count = stories.Count,
+            Stories = stories
+        };
+
+        return Ok(response);
     }
 }

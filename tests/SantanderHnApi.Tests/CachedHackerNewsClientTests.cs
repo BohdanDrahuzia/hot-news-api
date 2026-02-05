@@ -56,30 +56,24 @@ public sealed class CachedHackerNewsClientTests
         Assert.Equal(1, inner.ItemCalls);
     }
 
-    private sealed class CountingHackerNewsClient : IHackerNewsClient
+    private sealed class CountingHackerNewsClient(
+        IReadOnlyList<int> ids,
+        IReadOnlyDictionary<int, HackerNewsItem> items)
+        : IHackerNewsClient
     {
-        private readonly IReadOnlyList<int> _ids;
-        private readonly IReadOnlyDictionary<int, HackerNewsItem> _items;
-
         public int BestStoriesCalls { get; private set; }
         public int ItemCalls { get; private set; }
-
-        public CountingHackerNewsClient(IReadOnlyList<int> ids, IReadOnlyDictionary<int, HackerNewsItem> items)
-        {
-            _ids = ids;
-            _items = items;
-        }
 
         public Task<IReadOnlyList<int>> GetBestStoryIdsAsync(CancellationToken cancellationToken)
         {
             BestStoriesCalls++;
-            return Task.FromResult(_ids);
+            return Task.FromResult(ids);
         }
 
         public Task<HackerNewsItem?> GetItemAsync(int id, CancellationToken cancellationToken)
         {
             ItemCalls++;
-            _items.TryGetValue(id, out var item);
+            items.TryGetValue(id, out var item);
             return Task.FromResult(item);
         }
     }

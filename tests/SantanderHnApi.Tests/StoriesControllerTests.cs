@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using SantanderHnApi.Api.Contracts;
 using SantanderHnApi.Api.Controllers;
 using SantanderHnApi.Application.Interfaces;
 using SantanderHnApi.Application.Options;
@@ -47,7 +48,9 @@ public sealed class StoriesControllerTests
 
         var result = await controller.GetBestStories(1, CancellationToken.None);
 
-        Assert.IsType<OkObjectResult>(result);
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var payload = Assert.IsType<BestStoriesResponse>(ok.Value);
+        Assert.Equal(0, payload.Count);
     }
 
     private sealed class StubBestStoriesService : IBestStoriesService

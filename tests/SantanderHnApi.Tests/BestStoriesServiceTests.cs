@@ -68,47 +68,31 @@ public sealed class BestStoriesServiceTests
         Assert.True(client.MaxObservedConcurrency <= 2);
     }
 
-    private sealed class FakeHackerNewsClient : IHackerNewsClient
+    private sealed class FakeHackerNewsClient(IReadOnlyList<int> ids, IReadOnlyDictionary<int, HackerNewsItem> items)
+        : IHackerNewsClient
     {
-        private readonly IReadOnlyList<int> _ids;
-        private readonly IReadOnlyDictionary<int, HackerNewsItem> _items;
-
         public List<int> RequestedIds { get; } = new();
 
-        public FakeHackerNewsClient(IReadOnlyList<int> ids, IReadOnlyDictionary<int, HackerNewsItem> items)
-        {
-            _ids = ids;
-            _items = items;
-        }
-
         public Task<IReadOnlyList<int>> GetBestStoryIdsAsync(CancellationToken cancellationToken)
-            => Task.FromResult(_ids);
+            => Task.FromResult(ids);
 
         public Task<HackerNewsItem?> GetItemAsync(int id, CancellationToken cancellationToken)
         {
             RequestedIds.Add(id);
-            _items.TryGetValue(id, out var item);
+            items.TryGetValue(id, out var item);
             return Task.FromResult(item);
         }
     }
 
-    private sealed class DelayHackerNewsClient : IHackerNewsClient
+    private sealed class DelayHackerNewsClient(IReadOnlyList<int> ids, int delayMilliseconds) : IHackerNewsClient
     {
-        private readonly IReadOnlyList<int> _ids;
-        private readonly int _delayMilliseconds;
         private int _currentConcurrency;
         private int _maxObserved;
 
         public int MaxObservedConcurrency => Volatile.Read(ref _maxObserved);
 
-        public DelayHackerNewsClient(IReadOnlyList<int> ids, int delayMilliseconds)
-        {
-            _ids = ids;
-            _delayMilliseconds = delayMilliseconds;
-        }
-
         public Task<IReadOnlyList<int>> GetBestStoryIdsAsync(CancellationToken cancellationToken)
-            => Task.FromResult(_ids);
+            => Task.FromResult(ids);
 
         public async Task<HackerNewsItem?> GetItemAsync(int id, CancellationToken cancellationToken)
         {
@@ -117,7 +101,7 @@ public sealed class BestStoriesServiceTests
 
             try
             {
-                await Task.Delay(_delayMilliseconds, cancellationToken);
+                await Task.Delay(delayMilliseconds, cancellationToken);
             }
             finally
             {

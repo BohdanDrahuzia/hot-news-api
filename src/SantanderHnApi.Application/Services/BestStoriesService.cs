@@ -1,75 +1,59 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SantanderHnApi.Application.Interfaces;
+using SantanderHnApi.Application.Models;
 using SantanderHnApi.Application.Options;
 using SantanderHnApi.Domain.Models;
 
 namespace SantanderHnApi.Application.Services;
 
-public sealed class BestStoriesService : IBestStoriesService
+public sealed class BestStoriesService(
+    IHackerNewsClient client,
+    IOptions<HackerNewsOptions> options,
+    ILogger<BestStoriesService> logger)
+    : IBestStoriesService
 {
-    private readonly IHackerNewsClient _client;
-    private readonly HackerNewsOptions _options;
-    private readonly ILogger<BestStoriesService> _logger;
-
-    public BestStoriesService(
-        IHackerNewsClient client,
-        IOptions<HackerNewsOptions> options,
-        ILogger<BestStoriesService> logger)
-    {
-        _client = client;
-        _options = options.Value;
-        _logger = logger;
-    }
+    private readonly HackerNewsOptions _options = options.Value;
 
     public async Task<IReadOnlyList<BestStory>> GetBestStoriesAsync(
         int count,
         CancellationToken cancellationToken)
     {
-        var ids = await _client.GetBestStoryIdsAsync(cancellationToken);
+        var ids = await client.GetBestStoryIdsAsync(cancellationToken);
         if (ids.Count == 0)
         {
-            _logger.LogWarning("No best story IDs returned from Hacker News.");
+            logger.LogWarning("No best story IDs returned from Hacker News.");
             return Array.Empty<BestStory>();
         }
 
         var selectedIds = ids.Take(count).ToArray();
-        var throttler = new SemaphoreSlim(_options.MaxConcurrency);
+        var items = new HackerNewsItem?[selectedIds.Length];
 
-        try
-        {
-            var tasks = selectedIds.Select(async id =>
+        await Parallel.ForEachAsync(
+            Enumerable.Range(0, selectedIds.Length),
+            new ParallelOptions
             {
-                await throttler.WaitAsync(cancellationToken);
-                try
-                {
-                    return await _client.GetItemAsync(id, cancellationToken);
-                }
-                finally
-                {
-                    throttler.Release();
-                }
+                MaxDegreeOfParallelism = _options.MaxConcurrency,
+                CancellationToken = cancellationToken
+            },
+            async (index, ct) =>
+            {
+                var id = selectedIds[index];
+                items[index] = await client.GetItemAsync(id, ct);
             });
 
-            var items = await Task.WhenAll(tasks);
-
-            return items
-                .Where(item => item is { Type: "story" })
-                .Select(item => new BestStory
-                {
-                    Title = item!.Title ?? string.Empty,
-                    Uri = item.Url ?? string.Empty,
-                    PostedBy = item.By ?? string.Empty,
-                    Time = DateTimeOffset.FromUnixTimeSeconds(item.Time ?? 0),
-                    Score = item.Score ?? 0,
-                    CommentCount = item.Descendants ?? 0
-                })
-                .OrderByDescending(story => story.Score)
-                .ToArray();
-        }
-        finally
-        {
-            throttler.Dispose();
-        }
+        return items
+            .Where(item => item is { Type: "story" })
+            .Select(item => new BestStory
+            {
+                Title = item!.Title ?? string.Empty,
+                Uri = item.Url ?? string.Empty,
+                PostedBy = item.By ?? string.Empty,
+                Time = DateTimeOffset.FromUnixTimeSeconds(item.Time ?? 0),
+                Score = item.Score ?? 0,
+                CommentCount = item.Descendants ?? 0
+            })
+            .OrderByDescending(story => story.Score)
+            .ToArray();
     }
 }

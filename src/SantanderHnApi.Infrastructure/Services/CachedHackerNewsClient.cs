@@ -7,46 +7,36 @@ using SantanderHnApi.Application.Options;
 
 namespace SantanderHnApi.Infrastructure.Services;
 
-public sealed class CachedHackerNewsClient : IHackerNewsClient
+public sealed class CachedHackerNewsClient(
+    IHackerNewsClient innerClient,
+    IMemoryCache cache,
+    IOptions<HackerNewsOptions> options,
+    ILogger<CachedHackerNewsClient> logger)
+    : IHackerNewsClient
 {
     private const string BestStoriesCacheKey = "hn:beststories";
 
-    private readonly IHackerNewsClient _innerClient;
-    private readonly IMemoryCache _cache;
-    private readonly HackerNewsOptions _options;
-    private readonly ILogger<CachedHackerNewsClient> _logger;
-
-    public CachedHackerNewsClient(
-        IHackerNewsClient innerClient,
-        IMemoryCache cache,
-        IOptions<HackerNewsOptions> options,
-        ILogger<CachedHackerNewsClient> logger)
-    {
-        _innerClient = innerClient;
-        _cache = cache;
-        _options = options.Value;
-        _logger = logger;
-    }
+    private readonly HackerNewsOptions _options = options.Value;
 
     public async Task<IReadOnlyList<int>> GetBestStoryIdsAsync(CancellationToken cancellationToken)
     {
-        if (_cache.TryGetValue(BestStoriesCacheKey, out List<int>? cachedIds) && cachedIds is { Count: > 0 })
+        if (cache.TryGetValue(BestStoriesCacheKey, out List<int>? cachedIds) && cachedIds is { Count: > 0 })
         {
             return cachedIds;
         }
 
-        var ids = await _innerClient.GetBestStoryIdsAsync(cancellationToken);
+        var ids = await innerClient.GetBestStoryIdsAsync(cancellationToken);
         if (ids.Count == 0)
         {
             return ids;
         }
 
-        _cache.Set(
+        cache.Set(
             BestStoriesCacheKey,
             ids.ToList(),
             TimeSpan.FromSeconds(_options.BestStoriesCacheSeconds));
 
-        _logger.LogDebug("Cached {Count} best story IDs.", ids.Count);
+        logger.LogDebug("Cached {Count} best story IDs.", ids.Count);
         return ids;
     }
 
@@ -54,18 +44,18 @@ public sealed class CachedHackerNewsClient : IHackerNewsClient
     {
         var cacheKey = $"hn:item:{id}";
 
-        if (_cache.TryGetValue(cacheKey, out HackerNewsItem? cachedItem))
+        if (cache.TryGetValue(cacheKey, out HackerNewsItem? cachedItem))
         {
             return cachedItem;
         }
 
-        var item = await _innerClient.GetItemAsync(id, cancellationToken);
+        var item = await innerClient.GetItemAsync(id, cancellationToken);
         if (item is null)
         {
             return null;
         }
 
-        _cache.Set(
+        cache.Set(
             cacheKey,
             item,
             TimeSpan.FromSeconds(_options.ItemCacheSeconds));
