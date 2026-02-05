@@ -27,6 +27,8 @@ public sealed class BestStoriesService(
         }
 
         var selectedIds = ids.Take(count).ToArray();
+
+        // Safe: each worker writes to a unique index.
         var items = new HackerNewsItem?[selectedIds.Length];
 
         await Parallel.ForEachAsync(

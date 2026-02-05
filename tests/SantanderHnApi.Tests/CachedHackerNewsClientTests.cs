@@ -56,6 +56,41 @@ public sealed class CachedHackerNewsClientTests
         Assert.Equal(1, inner.ItemCalls);
     }
 
+    [Fact]
+    public async Task GetItemAsync_UsesCacheWhenAvailable()
+    {
+        const int storyId = 42;
+        var cachedItem = new HackerNewsItem
+        {
+            Title = "cached",
+            Url = "cached-url",
+            By = "cached-user",
+            Time = 1,
+            Score = 99,
+            Descendants = 5,
+            Type = "story"
+        };
+
+        var inner = new CountingHackerNewsClient(
+            ids: new List<int> { storyId },
+            items: new Dictionary<int, HackerNewsItem>
+            {
+                { storyId, new HackerNewsItem { Title = "live", Url = "live-url", By = "live", Time = 2, Score = 1, Descendants = 0, Type = "story" } }
+            });
+
+        var cache = new MemoryCache(new MemoryCacheOptions());
+        cache.Set($"hn:item:{storyId}", cachedItem);
+
+        var options = Options.Create(new HackerNewsOptions { ItemCacheSeconds = 60 });
+        var client = new CachedHackerNewsClient(inner, cache, options, NullLogger<CachedHackerNewsClient>.Instance);
+
+        var result = await client.GetItemAsync(storyId, CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal("cached", result?.Title);
+        Assert.Equal(0, inner.ItemCalls);
+    }
+
     private sealed class CountingHackerNewsClient(
         IReadOnlyList<int> ids,
         IReadOnlyDictionary<int, HackerNewsItem> items)
