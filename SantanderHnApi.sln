@@ -1,0 +1,48 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SantanderHnApi.Api", "src\\SantanderHnApi.Api\\SantanderHnApi.Api.csproj", "{25EBD2B4-1B2C-48BA-BE19-3202486ACC68}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SantanderHnApi.Application", "src\\SantanderHnApi.Application\\SantanderHnApi.Application.csproj", "{98C92E1A-977D-45C0-A434-80D33396C9BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SantanderHnApi.Domain", "src\\SantanderHnApi.Domain\\SantanderHnApi.Domain.csproj", "{7441DCF8-C2DD-4C66-BCB1-EA1934BB6979}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SantanderHnApi.Infrastructure", "src\\SantanderHnApi.Infrastructure\\SantanderHnApi.Infrastructure.csproj", "{93B648F0-BDEB-4E40-A223-F7A417F35028}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SantanderHnApi.Tests", "tests\\SantanderHnApi.Tests\\SantanderHnApi.Tests.csproj", "{11511E24-395B-419B-A3AF-296F2F1F60E1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{25EBD2B4-1B2C-48BA-BE19-3202486ACC68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25EBD2B4-1B2C-48BA-BE19-3202486ACC68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25EBD2B4-1B2C-48BA-BE19-3202486ACC68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25EBD2B4-1B2C-48BA-BE19-3202486ACC68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98C92E1A-977D-45C0-A434-80D33396C9BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98C92E1A-977D-45C0-A434-80D33396C9BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98C92E1A-977D-45C0-A434-80D33396C9BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98C92E1A-977D-45C0-A434-80D33396C9BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7441DCF8-C2DD-4C66-BCB1-EA1934BB6979}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7441DCF8-C2DD-4C66-BCB1-EA1934BB6979}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7441DCF8-C2DD-4C66-BCB1-EA1934BB6979}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7441DCF8-C2DD-4C66-BCB1-EA1934BB6979}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93B648F0-BDEB-4E40-A223-F7A417F35028}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93B648F0-BDEB-4E40-A223-F7A417F35028}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93B648F0-BDEB-4E40-A223-F7A417F35028}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93B648F0-BDEB-4E40-A223-F7A417F35028}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11511E24-395B-419B-A3AF-296F2F1F60E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11511E24-395B-419B-A3AF-296F2F1F60E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11511E24-395B-419B-A3AF-296F2F1F60E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11511E24-395B-419B-A3AF-296F2F1F60E1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F9037641-1BB4-49F1-ABF5-841C055CC700}
+	EndGlobalSection
+EndGlobal
