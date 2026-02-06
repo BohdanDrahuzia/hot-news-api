@@ -38,7 +38,7 @@ Example:
 curl "http://localhost:5123/api/stories/best?n=10"
 ```
 
-Original prompt response shape (array), kept unchanged:
+Original response:
 
 ```json
 [
