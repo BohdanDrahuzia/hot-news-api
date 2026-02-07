@@ -18,9 +18,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\\..\\src\\SantanderHnApi.Api\\SantanderHnApi.Api.csproj" />
-    <ProjectReference Include="..\\..\\src\\SantanderHnApi.Application\\SantanderHnApi.Application.csproj" />
-    <ProjectReference Include="..\\..\\src\\SantanderHnApi.Domain\\SantanderHnApi.Domain.csproj" />
-    <ProjectReference Include="..\\..\\src\\SantanderHnApi.Infrastructure\\SantanderHnApi.Infrastructure.csproj" />
+    <ProjectReference Include="..\\..\\Backend\\SantanderHnApi.Api\\SantanderHnApi.Api.csproj" />
+    <ProjectReference Include="..\\..\\Backend\\SantanderHnApi.Application\\SantanderHnApi.Application.csproj" />
+    <ProjectReference Include="..\\..\\Backend\\SantanderHnApi.Domain\\SantanderHnApi.Domain.csproj" />
+    <ProjectReference Include="..\\..\\Backend\\SantanderHnApi.Infrastructure\\SantanderHnApi.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

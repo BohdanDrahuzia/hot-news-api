@@ -1,6 +1,15 @@
-# Santander Hacker News API
+# Hacker News API
 
 ASP.NET Core API that returns the first `n` Hacker News best stories, sorted by score descending. Designed to be simple, resilient, and safe to call at scale.
+
+## Solution Highlights
+
+- Clean architecture layers: Domain at the core, Application for use‑cases, Infrastructure for external systems, API for controllers.
+- Base endpoint logic: take the first `n` IDs from HN, fetch those items, then sort those `n` stories by `score` descending.
+- Tests: xUnit + Moq
+- Input/options validation (1<=n<=500)
+- Error handling: 400s for invalid input, safe logging/handling of HN failures, and a global exception handler outside Development.
+- Parallelization control: `MaxConcurrency` governs `Parallel.ForEachAsync` fan‑out in `Backend/SantanderHnApi.Application/Services/BestStoriesService.cs`.
 
 ## Quickstart
 
@@ -10,7 +19,7 @@ ASP.NET Core API that returns the first `n` Hacker News best stories, sorted by 
 ```bash
 dotnet restore
 
-dotnet run --project src/SantanderHnApi.Api/SantanderHnApi.Api.csproj
+dotnet run --project Backend/SantanderHnApi.Api/SantanderHnApi.Api.csproj
 ```
 
 The API will be available at:
@@ -31,6 +40,7 @@ dotnet test
 `GET /api/stories/best?n=10`
 
 Ordering: take the first `n` IDs in the order returned by Hacker News, fetch those items, then sort those `n` stories by `score` descending.
+The response also includes the Hacker News `id` for each story to support deep linking to the discussion page.
 
 Example:
 
@@ -60,6 +70,7 @@ Our API response (adds `count` wrapper):
   "count": 1,
   "stories": [
     {
+      "id": 21233041,
       "title": "A uBlock Origin update was rejected from the Chrome Web Store",
       "uri": "https://github.com/uBlockOrigin/uBlock-issues/issues/745",
       "postedBy": "ismaildonmez",
@@ -73,7 +84,7 @@ Our API response (adds `count` wrapper):
 
 ## Configuration
 
-Edit `src/SantanderHnApi.Api/appsettings.json` if needed:
+Edit `Backend/SantanderHnApi.Api/appsettings.json` if needed:
 
 - `BestStoriesCacheSeconds`: Cache TTL for the best stories ID list.
 - `ItemCacheSeconds`: Cache TTL for each story item.
@@ -110,7 +121,7 @@ Edit `src/SantanderHnApi.Api/appsettings.json` if needed:
 
 ## Architecture
 
-- `src/SantanderHnApi.Api` — HTTP surface and composition root
-- `src/SantanderHnApi.Application` — Use cases and interfaces
-- `src/SantanderHnApi.Domain` — Core models
-- `src/SantanderHnApi.Infrastructure` — Hacker News client, caching, and resilience
+- `Backend/SantanderHnApi.Api` — HTTP surface and composition root
+- `Backend/SantanderHnApi.Application` — Use cases and interfaces
+- `Backend/SantanderHnApi.Domain` — Core models
+- `Backend/SantanderHnApi.Infrastructure` — Hacker News client, caching, and resilience

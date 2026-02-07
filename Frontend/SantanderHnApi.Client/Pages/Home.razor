@@ -1,0 +1,242 @@
+@page "/"
+@using System.Net.Http.Json
+@using SantanderHnApi.Client.Models
+@inject HttpClient Http
+
+<PageTitle>Best Stories</PageTitle>
+
+<section class="hn-hero">
+    <div class="hn-hero-copy">
+        <p class="hn-eyebrow">Live from Hacker News</p>
+        <h1>Best Stories, ranked by score.</h1>
+        <p class="hn-subtitle">Pull the freshest top stories. Choose how many to load, then refresh on demand.</p>
+    </div>
+    <div class="hn-hero-card">
+        <div class="hn-stat">
+            <span class="hn-stat-label">Last fetch</span>
+            <span class="hn-stat-value">@lastFetchLabel</span>
+        </div>
+        <div class="hn-stat">
+            <span class="hn-stat-label">Showing</span>
+            <span class="hn-stat-value">@(response?.Count ?? 0)</span>
+        </div>
+    </div>
+</section>
+
+<section class="hn-controls">
+    <form class="hn-form" @onsubmit="OnSubmit" @onsubmit:preventDefault>
+        <div class="hn-field">
+            <label for="storyCount">Number of stories</label>
+            <input id="storyCount"
+                   type="number"
+                   min="1"
+                   max="@MaxStories"
+                   @bind="storyCount"
+                   @bind:event="oninput" />
+            <span class="hn-hint">Max @MaxStories stories per request</span>
+        </div>
+        <button class="hn-button" type="submit" disabled="@isLoading">
+            @(isLoading ? "Loading..." : "Search")
+        </button>
+    </form>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="hn-alert" role="alert">
+        @errorMessage
+    </div>
+}
+
+<section class="hn-results">
+    @if (response is null && !isLoading && string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="hn-empty">Enter a number and click Search to load stories.</div>
+    }
+    else if (isLoading)
+    {
+        <div class="hn-meta">
+            <span>Loading stories…</span>
+        </div>
+        <div class="hn-list">
+            @for (var i = 0; i < Math.Min(storyCount, 6); i++)
+            {
+                <article class="hn-card hn-skeleton" style="animation-delay:@($"{i * 0.06}s")">
+                    <div class="hn-skeleton-title"></div>
+                    <div class="hn-skeleton-meta">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else if (response is not null)
+    {
+        <div class="hn-meta">
+            <span>Showing @response.Count story@(response.Count == 1 ? string.Empty : "ies")</span>
+            <span class="hn-meta-divider">•</span>
+            <span>Sorted by score descending</span>
+        </div>
+
+        @if (response.Stories.Count == 0 && !isLoading)
+        {
+            <div class="hn-empty">No stories found.</div>
+        }
+        else
+        {
+            <div class="hn-list">
+                @foreach (var story in response.Stories.Select((item, index) => (item, index)))
+                {
+                    var storyKey = GetStoryKey(story.item, story.index);
+                    var isPreviewOpen = IsPreviewOpen(storyKey);
+                    var storyLink = GetStoryLink(story.item);
+
+                    <article class="hn-card hn-reveal"
+                             style="animation-delay:@($"{story.index * 0.04}s")"
+                             @onmouseenter="@(() => ShowPreview(storyKey))"
+                             @onmouseleave="@(() => HidePreview(storyKey))">
+                        <header class="hn-card-header">
+                            @if (!string.IsNullOrWhiteSpace(storyLink))
+                            {
+                                <a href="@storyLink" target="_blank" rel="noopener noreferrer">@story.item.Title</a>
+                            }
+                            else
+                            {
+                                <span>@story.item.Title</span>
+                            }
+                        </header>
+                        <div class="hn-card-meta">
+                            <span class="hn-pill hn-pill-primary">Score @story.item.Score</span>
+                            <span class="hn-pill hn-pill-muted">@story.item.CommentCount comments</span>
+                            <span class="hn-pill">@story.item.PostedBy</span>
+                            <span class="hn-time">@story.item.Time.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                            @if (story.item.Id > 0)
+                            {
+                                <a class="hn-link" href="@($"https://news.ycombinator.com/item?id={story.item.Id}")" target="_blank" rel="noopener noreferrer">Open in HN</a>
+                            }
+                        </div>
+                        <div class="hn-preview @(isPreviewOpen ? "is-open" : string.Empty)">
+                            @if (isPreviewOpen)
+                            {
+                                if (TryGetPreviewUrl(story.item, out var previewUrl))
+                                {
+                                    <iframe title="Story preview"
+                                            src="@previewUrl"
+                                            loading="lazy"
+                                            referrerpolicy="no-referrer"
+                                            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
+                                }
+                                else
+                                {
+                                    <div class="hn-preview-empty">Preview unavailable for this story.</div>
+                                }
+                                <div class="hn-preview-note">Some sites block embedded previews. Use the story link if the preview is blank.</div>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    }
+</section>
+
+@code {
+    private const int MaxStories = 500;
+
+    private int storyCount = 10;
+    private BestStoriesResponse? response;
+    private bool isLoading;
+    private string? errorMessage;
+    private DateTimeOffset? lastFetch;
+    private string? hoveredStoryKey;
+
+    private string lastFetchLabel => lastFetch.HasValue
+        ? lastFetch.Value.ToLocalTime().ToString("HH:mm:ss")
+        : "Not yet";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchStories();
+    }
+
+    private async Task OnSubmit()
+    {
+        await FetchStories();
+    }
+
+    private async Task FetchStories()
+    {
+        errorMessage = null;
+
+        if (storyCount < 1 || storyCount > MaxStories)
+        {
+            response = null;
+            errorMessage = $"Please enter a number between 1 and {MaxStories}.";
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            response = await Http.GetFromJsonAsync<BestStoriesResponse>($"api/stories/best?n={storyCount}")
+                       ?? new BestStoriesResponse();
+            lastFetch = DateTimeOffset.UtcNow;
+        }
+        catch (Exception ex)
+        {
+            response = null;
+            errorMessage = $"Failed to load stories. {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetStoryKey(BestStory story, int index)
+    {
+        return story.Id > 0 ? story.Id.ToString() : $"idx-{index}";
+    }
+
+    private void ShowPreview(string key)
+    {
+        hoveredStoryKey = key;
+    }
+
+    private void HidePreview(string key)
+    {
+        if (hoveredStoryKey == key)
+        {
+            hoveredStoryKey = null;
+        }
+    }
+
+    private bool IsPreviewOpen(string key)
+    {
+        return hoveredStoryKey == key;
+    }
+
+    private bool TryGetPreviewUrl(BestStory story, out string? url)
+    {
+        url = GetStoryLink(story);
+        return !string.IsNullOrWhiteSpace(url);
+    }
+
+    private string? GetStoryLink(BestStory story)
+    {
+        if (!string.IsNullOrWhiteSpace(story.Uri))
+        {
+            return story.Uri;
+        }
+
+        if (story.Id > 0)
+        {
+            return $"https://news.ycombinator.com/item?id={story.Id}";
+        }
+
+        return null;
+    }
+
+}
