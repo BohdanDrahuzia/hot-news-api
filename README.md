@@ -99,7 +99,7 @@ Edit `Backend/SantanderHnApi.Api/appsettings.json` if needed:
 
 ## Design Notes
 
-- Caching via decorator: `CachedHackerNewsClient`.
+- Used IMemoryCache for caching
 - Parallel fetch uses `Parallel.ForEachAsync` with `MaxConcurrency`.
 - Resilience: retry with backoff + jitter, plus circuit breaker.
 - Validation: `n` bounds and startup validation for options.
